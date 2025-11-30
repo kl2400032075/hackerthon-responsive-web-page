@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scholarship & Financial Aid Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background-color: #ddd;
+      border: none;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+    .tab.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .section {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input, select, button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .status {
+      font-weight: bold;
+    }
+    .status.applied { color: orange; }
+    .status.approved { color: green; }
+    .status.rejected { color: red; }
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Scholarship & Financial Aid Tracker</h1>
+    </header>
+    
+    <div class="tabs">
+      <button class="tab active" id="studentTab">Student</button>
+      <button class="tab" id="adminTab">Admin</button>
+    </div>
+
+    <!-- Student Section -->
+    <div class="section" id="studentSection">
+      <h2>Student Dashboard</h2>
+      
+      <!-- Search Scholarships -->
+      <input type="text" id="searchInput" placeholder="Search scholarships..." />
+      
+      <h3>Available Scholarships</h3>
+      <ul id="scholarshipList"></ul>
+      
+      <!-- Apply for Aid -->
+      <h3>Apply for Financial Aid</h3>
+      <form id="applyForm">
+        <input type="text" id="studentName" placeholder="Your Name" required />
+        <select id="scholarshipSelect" required>
+          <option value="">Select Scholarship</option>
+        </select>
+        <button type="submit">Apply</button>
+      </form>
+      
+      <!-- Track Applications -->
+      <h3>Your Applications</h3>
+      <ul id="applicationList"></ul>
+    </div>
+
+    <!-- Admin Section -->
+    <div class="section" id="adminSection" style="display: none;">
+      <h2>Admin Dashboard</h2>
+      
+      <!-- Manage Scholarships -->
+      <h3>Manage Scholarships</h3>
+      <form id="addScholarshipForm">
+        <input type="text" id="schName" placeholder="Scholarship Name" required />
+        <input type="text" id="schDesc" placeholder="Description" />
+        <input type="date" id="schDeadline" />
+        <input type="number" id="schAmount" placeholder="Amount" required />
+        <button type="submit">Add Scholarship</button>
+      </form>
+      <ul id="adminScholarshipList"></ul>
+      
+      <!-- Track Applications -->
+      <h3>Application Statuses</h3>
+      <ul id="adminApplicationList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Mock data
+    let scholarships = [
+      { id: 1, name: 'Merit Scholarship', description: 'For high-achieving students', deadline: '2023-12-31', amount: 5000 },
+      { id: 2, name: 'Need-Based Aid', description: 'Financial aid for low-income students', deadline: '2023-11-30', amount: 3000 },
+    ];
+    let applications = [
+      { id: 1, studentName: 'John Doe', scholarshipId: 1, status: 'applied' },
+      { id: 2, studentName: 'Jane Smith', scholarshipId: 2, status: 'approved' },
+    ];
+
+    // DOM elements
+    const studentTab = document.getElementById('studentTab');
+    const adminTab = document.getElementById('adminTab');
+    const studentSection = document.getElementById('studentSection');
+    const adminSection = document.getElementById('adminSection');
+    const searchInput = document.getElementById('searchInput');
+    const scholarshipList = document.getElementById('scholarshipList');
+    const applyForm = document.getElementById('applyForm');
+    const studentNameInput = document.getElementById('studentName');
+    const scholarshipSelect = document.getElementById('scholarshipSelect');
+    const applicationList = document.getElementById('applicationList');
+    const addScholarshipForm = document.getElementById('addScholarshipForm');
+    const adminScholarshipList = document.getElementById('adminScholarshipList');
+    const adminApplicationList = document.getElementById('adminApplicationList');
+
+    // Tab switching
+    studentTab.addEventListener('click', () => {
+      studentTab.classList.add('active');
+      adminTab.classList.remove('active');
+      studentSection.style.display = 'block';
+      adminSection.style.display = 'none';
+      renderStudentView();
+    });
+    adminTab.addEventListener('click', () => {
+      adminTab.classList.add('active');
+      studentTab.classList.remove('active');
+      adminSection.style.display = 'block';
+      studentSection.style.display = 'none';
+      renderAdminView();
+    });
+
+    // Render functions
+    function renderScholarships(listElement, filtered = scholarships) {
+      listElement.innerHTML = '';
+      filtered.forEach(sch => {
+        const li = document.createElement('li');
+        li.textContent = `${sch.name}: ${sch.description} - Amount: $${sch.amount} - Deadline: ${sch.deadline}`;
+        listElement.appendChild(li);
+      });
+    }
+
+    function renderStudentView() {
+      renderScholarships(scholarshipList);
+      scholarshipSelect.innerHTML = '<option value="">Select Scholarship</option>';
+      scholarships.forEach(sch => {
+        const option = document.createElement('option');
+        option.value = sch.id;
+        option.textContent = sch.name;
+        scholarshipSelect.appendChild(option);
+      });
+      renderApplications(applicationList, studentNameInput.value);
+    }
+
+    function renderApplications(listElement, filterName = '') {
+      listElement.innerHTML = '';
+      applications.filter(app => !filterName || app.studentName === filterName).forEach(app => {
+        const sch = scholarships.find(s => s.id === app.scholarshipId);
+        const li = document.createElement('li');
+        li.innerHTML = `${sch?.name} - Status: <span class="status ${app.status}">${app.status}</span>`;
+        listElement.appendChild(li);
+      });
+    }
+
+    function renderAdminView() {
+      renderScholarships(adminScholarshipList);
+      renderAdminApplications();
+    }
+
+    function renderAdminApplications() {
+      adminApplicationList.innerHTML = '';
+      applications.forEach(app => {
+        const sch = scholarships.find(s => s.id === app.scholarshipId);
+        const li = document.createElement('li');
+        li.innerHTML = `${app.studentName} - ${sch?.name} - Status: `;
+        const select = document.createElement('select');
+        ['applied', 'approved', 'rejected'].forEach(status => {
+          const option = document.createElement('option');
+          option.value = status;
+          option.textContent = status;
+          if (status === app.status) option.selected = true;
+          select.appendChild(option);
+        });
+        select.addEventListener('change', () => {
+          app.status = select.value;
+          renderAdminApplications();
+        });
+        li.appendChild(select);
+        adminApplicationList.appendChild(li);
+      });
+    }
+
+    // Search functionality
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.toLowerCase();
+      const filtered = scholarships.filter(sch => sch.name.toLowerCase().includes(term));
+      renderScholarships(scholarshipList, filtered);
+    });
+
+    // Apply for scholarship
+    applyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = studentNameInput.value;
+      const schId = parseInt(scholarshipSelect.value);
+      if (name && schId) {
+        applications.push({ id: Date.now(), studentName: name, scholarshipId: schId, status: 'applied' });
+        renderApplications(applicationList, name);
+        studentNameInput.value = '';
+        scholarshipSelect.value = '';
+      }
+    });
+
+    // Add scholarship
+    addScholarshipForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('schName').value;
+      const desc = document.getElementById('schDesc').value;
+      const deadline = document.getElementById('schDeadline').value;
+      const amount = parseInt(document.getElementById('schAmount').value);
+      if (name && amount) {
+        scholarships.push({ id: Date.now(), name, description: desc, deadline, amount });
+        renderAdminView();
+        addScholarshipForm.reset();
+      }
+    });
+
+    // Initial render
+    renderStudentView();
+  </script>
+</body>
+</html>
